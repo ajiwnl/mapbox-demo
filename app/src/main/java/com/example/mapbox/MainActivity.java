@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         floatingActionButton.hide();
-        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE, new Style.OnStyleLoaded() {
+        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
                 mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(20.0).build());
