@@ -5,6 +5,9 @@ import static com.mapbox.maps.plugin.locationcomponent.LocationComponentUtils.ge
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
@@ -28,10 +31,13 @@ import com.mapbox.maps.plugin.gestures.OnMoveListener;
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin;
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener;
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener;
+import com.mapbox.maps.ImageHolder;
 
 public class MainActivity extends AppCompatActivity {
     private MapView mapView;
     FloatingActionButton floatingActionButton;
+
+    String mapLocation = "6000 Gov. M. Cuenco Ave, Cebu City, 6000 Cebu";
 
     private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
         @Override
@@ -96,8 +102,16 @@ public class MainActivity extends AppCompatActivity {
                 mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(20.0).build());
                 LocationComponentPlugin locationComponentPlugin = getLocationComponent(mapView);
                 locationComponentPlugin.setEnabled(true);
+
                 LocationPuck2D locationPuck2D = new LocationPuck2D();
-                locationPuck2D.setBearingImage(AppCompatResources.getDrawable(MainActivity.this, R.drawable.baseline_location_on_24));
+
+                // Convert VectorDrawable to Bitmap
+                Drawable locationIconDrawable = AppCompatResources.getDrawable(MainActivity.this, R.drawable.baseline_location_on_24);
+                Bitmap locationIconBitmap = drawableToBitmap(locationIconDrawable);
+
+                // Set the Bitmap as the bearing image
+                locationPuck2D.setBearingImage(ImageHolder.from(locationIconBitmap));
+
                 locationComponentPlugin.setLocationPuck(locationPuck2D);
                 locationComponentPlugin.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener);
                 locationComponentPlugin.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener);
@@ -114,5 +128,14 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    // Helper method to convert Drawable to Bitmap
+    private Bitmap drawableToBitmap(Drawable drawable) {
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
     }
 }
