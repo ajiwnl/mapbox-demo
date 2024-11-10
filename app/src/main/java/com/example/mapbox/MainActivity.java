@@ -1,142 +1,67 @@
 package com.example.mapbox;
 
-import static com.mapbox.maps.plugin.gestures.GesturesUtils.getGestures;
-import static com.mapbox.maps.plugin.locationcomponent.LocationComponentUtils.getLocationComponent;
-
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.view.View;
+import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.mapbox.android.gestures.MoveGestureDetector;
-import com.mapbox.geojson.Point;
-import com.mapbox.maps.CameraOptions;
-import com.mapbox.maps.MapView;
-import com.mapbox.maps.Style;
-import com.mapbox.maps.plugin.LocationPuck2D;
-import com.mapbox.maps.plugin.gestures.OnMoveListener;
-import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin;
-import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener;
-import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener;
-import com.mapbox.maps.ImageHolder;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
-    private MapView mapView;
-    FloatingActionButton floatingActionButton;
-
-    String mapLocation = "6000 Gov. M. Cuenco Ave, Cebu City, 6000 Cebu";
-
-    private final ActivityResultLauncher<String> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), new ActivityResultCallback<Boolean>() {
-        @Override
-        public void onActivityResult(Boolean result) {
-            if (result) {
-                Toast.makeText(MainActivity.this, "Permission granted!", Toast.LENGTH_SHORT).show();
-            }
-        }
-    });
-
-    private final OnIndicatorBearingChangedListener onIndicatorBearingChangedListener = new OnIndicatorBearingChangedListener() {
-        @Override
-        public void onIndicatorBearingChanged(double v) {
-            mapView.getMapboxMap().setCamera(new CameraOptions.Builder().bearing(v).build());
-        }
-    };
-
-    private final OnIndicatorPositionChangedListener onIndicatorPositionChangedListener = new OnIndicatorPositionChangedListener() {
-        @Override
-        public void onIndicatorPositionChanged(@NonNull Point point) {
-            mapView.getMapboxMap().setCamera(new CameraOptions.Builder().center(point).zoom(20.0).build());
-            getGestures(mapView).setFocalPoint(mapView.getMapboxMap().pixelForCoordinate(point));
-        }
-    };
-
-    private final OnMoveListener onMoveListener = new OnMoveListener() {
-        @Override
-        public void onMoveBegin(@NonNull MoveGestureDetector moveGestureDetector) {
-            getLocationComponent(mapView).removeOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener);
-            getLocationComponent(mapView).removeOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener);
-            getGestures(mapView).removeOnMoveListener(onMoveListener);
-            floatingActionButton.show();
-        }
-
-        @Override
-        public boolean onMove(@NonNull MoveGestureDetector moveGestureDetector) {
-            return false;
-        }
-
-        @Override
-        public void onMoveEnd(@NonNull MoveGestureDetector moveGestureDetector) {
-
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mapView = findViewById(R.id.mapView);
-        floatingActionButton = findViewById(R.id.focusLocation);
+        // Initialize WebView
+        WebView webView = findViewById(R.id.webview_map);
 
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
+        // Enable JavaScript (important for Leaflet to work)
+        webView.getSettings().setJavaScriptEnabled(true);
 
-        floatingActionButton.hide();
-        mapView.getMapboxMap().loadStyleUri(Style.SATELLITE_STREETS, new Style.OnStyleLoaded() {
+        // Set up the WebViewClient for regular navigation
+        webView.setWebViewClient(new WebViewClient());
+
+        // Set up the WebChromeClient to handle geolocation permissions
+        webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public void onStyleLoaded(@NonNull Style style) {
-                mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(20.0).build());
-                LocationComponentPlugin locationComponentPlugin = getLocationComponent(mapView);
-                locationComponentPlugin.setEnabled(true);
-
-                LocationPuck2D locationPuck2D = new LocationPuck2D();
-
-                // Convert VectorDrawable to Bitmap
-                Drawable locationIconDrawable = AppCompatResources.getDrawable(MainActivity.this, R.drawable.baseline_location_on_24);
-                Bitmap locationIconBitmap = drawableToBitmap(locationIconDrawable);
-
-                // Set the Bitmap as the bearing image
-                locationPuck2D.setBearingImage(ImageHolder.from(locationIconBitmap));
-
-                locationComponentPlugin.setLocationPuck(locationPuck2D);
-                locationComponentPlugin.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener);
-                locationComponentPlugin.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener);
-                getGestures(mapView).addOnMoveListener(onMoveListener);
-
-                floatingActionButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        locationComponentPlugin.addOnIndicatorBearingChangedListener(onIndicatorBearingChangedListener);
-                        locationComponentPlugin.addOnIndicatorPositionChangedListener(onIndicatorPositionChangedListener);
-                        getGestures(mapView).addOnMoveListener(onMoveListener);
-                        floatingActionButton.hide();
-                    }
-                });
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                // Automatically grant geolocation access
+                callback.invoke(origin, true, false);
             }
         });
+
+        // Check if location permissions are granted
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Request permission if not granted
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    1);
+        }
+
+        // Load the HTML content (Leaflet map code)
+        webView.loadUrl("file:///android_asset/leaflet_map_example.html");
     }
 
-    // Helper method to convert Drawable to Bitmap
-    private Bitmap drawableToBitmap(Drawable drawable) {
-        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
-        return bitmap;
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {  // Check for the location permission request
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, show a Toast message
+                Toast.makeText(this, "Location permission granted", Toast.LENGTH_SHORT).show();
+            } else {
+                // Permission denied, show a message or take necessary action
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
+
 }
-//added test

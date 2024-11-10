@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet Map Example</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+
+    <h1>University of Cebu Campuses</h1>
+
+    <!-- Map container -->
+    <div id="map" style="width: 100%; height: 500px;"></div>
+
+    <!-- Leaflet JS -->
+   <!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // Initialize the map (but don't set the view yet)
+    var map = L.map('map');
+
+    // Add a tile layer (use OpenStreetMap or another provider)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Coordinates for UC Banilad and UC Main (optional markers)
+    var ucBanilad = [10.3384, 123.9117]; // UC Banilad
+    var ucMain = [10.2969648, 123.896915672416]; // UC Main
+
+    // Add markers for each campus (optional)
+    var marker1 = L.marker(ucBanilad).addTo(map)
+        .bindPopup('University of Cebu Banilad')
+        .openPopup();
+
+    var marker2 = L.marker(ucMain).addTo(map)
+        .bindPopup('University of Cebu Main');
+
+    // Attempt to get the user's current location
+    map.locate({setView: true, maxZoom: 16});  // Set map view after location is found
+
+    // Add a marker for the current location and center the map when location is found
+    function onLocationFound(e) {
+        var userLat = e.latlng.lat;
+        var userLng = e.latlng.lng;
+
+        // Set the map's center to the user's current location
+        map.setView([userLat, userLng], 16);
+
+        // Add a marker for the user's location
+        var userMarker = L.marker([userLat, userLng]).addTo(map)
+            .bindPopup("You are here!")
+            .openPopup();
+    }
+
+    // Handle location error
+    function onLocationError(e) {
+        alert("Unable to detect your location: " + e.message);  // Alert if there's an error finding the location
+    }
+
+    // Set up event listeners for location events
+    map.on('locationfound', onLocationFound);
+    map.on('locationerror', onLocationError);
+
+</script>
+</body>
+</html>
