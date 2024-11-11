@@ -46,8 +46,8 @@ public class MainActivity extends AppCompatActivity {
                     1);
         }
 
-        // Load the HTML content (Leaflet map code)
-        webView.loadUrl("file:///android_asset/leaflet_map_example.html");
+        // Load the remote URL for the Leaflet map hosted on Vercel
+        webView.loadUrl("https://leaflet-maptest.vercel.app/");
     }
 
     @Override
@@ -63,5 +63,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
 }
